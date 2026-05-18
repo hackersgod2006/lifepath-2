@@ -3,20 +3,40 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LifePath 2.0 API — The App That Fixes What Life Breaks
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profile and onboarding
+  - name: life-score
+    description: Life Score engine
+  - name: tasks
+    description: Procrastination Killer module — tasks
+  - name: mood
+    description: Morning mood checks
+  - name: sessions
+    description: Focus / work sessions (procrastination module)
+  - name: urges
+    description: Addiction module — urge logs
+  - name: streaks
+    description: Addiction recovery streaks
+  - name: body-doubling
+    description: Body Doubling rooms and sessions
+  - name: insights
+    description: Daily science insights
+  - name: weekly-report
+    description: Weekly Life Report
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +44,529 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── USERS ────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/onboard:
+    post:
+      operationId: completeOnboarding
+      tags: [users]
+      summary: Complete onboarding flow and create/update user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingInput"
+      responses:
+        "201":
+          description: Onboarding complete, user created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OnboardingResult"
+
+  # ─── LIFE SCORE ───────────────────────────────────────────────────────────
+  /life-score:
+    get:
+      operationId: getLifeScore
+      tags: [life-score]
+      summary: Get current Life Score with breakdown
+      responses:
+        "200":
+          description: Life Score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LifeScore"
+
+  /life-score/history:
+    get:
+      operationId: getLifeScoreHistory
+      tags: [life-score]
+      summary: Get Life Score history for the past 30 days
+      responses:
+        "200":
+          description: Life Score history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LifeScoreHistoryPoint"
+
+  /life-score/simulation:
+    get:
+      operationId: getSimulation
+      tags: [life-score]
+      summary: Get current path vs goal path simulation data
+      responses:
+        "200":
+          description: Simulation data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Simulation"
+
+  # ─── TASKS (Procrastination Killer) ──────────────────────────────────────
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: Get today's task list
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+          description: ISO date string (defaults to today)
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task (complete, snooze, edit)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tasks/risk-score:
+    get:
+      operationId: getProcrastinationRisk
+      tags: [tasks]
+      summary: Get today's procrastination risk score
+      responses:
+        "200":
+          description: Risk score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcrastinationRisk"
+
+  /tasks/stats:
+    get:
+      operationId: getTaskStats
+      tags: [tasks]
+      summary: Get weekly task completion stats and patterns
+      responses:
+        "200":
+          description: Task statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskStats"
+
+  # ─── MOOD ──────────────────────────────────────────────────────────────────
+  /mood:
+    post:
+      operationId: logMood
+      tags: [mood]
+      summary: Log morning mood check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoodInput"
+      responses:
+        "201":
+          description: Mood logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoodLog"
+
+  /mood/today:
+    get:
+      operationId: getTodayMood
+      tags: [mood]
+      summary: Get today's mood log if exists
+      responses:
+        "200":
+          description: Today's mood
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MoodLog"
+        "404":
+          description: No mood logged today
+
+  # ─── WORK SESSIONS ────────────────────────────────────────────────────────
+  /sessions:
+    get:
+      operationId: getSessions
+      tags: [sessions]
+      summary: Get past focus sessions
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Sessions list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FocusSession"
+    post:
+      operationId: startSession
+      tags: [sessions]
+      summary: Start a new focus session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionInput"
+      responses:
+        "201":
+          description: Session started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusSession"
+
+  /sessions/{id}/complete:
+    post:
+      operationId: completeSession
+      tags: [sessions]
+      summary: Mark a focus session as complete
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionComplete"
+      responses:
+        "200":
+          description: Session completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FocusSession"
+
+  /sessions/stats:
+    get:
+      operationId: getSessionStats
+      tags: [sessions]
+      summary: Get focus session statistics
+      responses:
+        "200":
+          description: Session statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStats"
+
+  # ─── URGE LOGS (Addiction module) ─────────────────────────────────────────
+  /urges:
+    get:
+      operationId: getUrges
+      tags: [urges]
+      summary: Get urge log history
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Urge logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UrgeLog"
+    post:
+      operationId: logUrge
+      tags: [urges]
+      summary: Log a new urge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UrgeInput"
+      responses:
+        "201":
+          description: Urge logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UrgeLog"
+
+  /urges/trigger-map:
+    get:
+      operationId: getTriggerMap
+      tags: [urges]
+      summary: Get HALT trigger map (heat graph data)
+      responses:
+        "200":
+          description: Trigger map data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriggerMap"
+
+  # ─── STREAKS ──────────────────────────────────────────────────────────────
+  /streaks:
+    get:
+      operationId: getStreak
+      tags: [streaks]
+      summary: Get current recovery streak and milestone data
+      responses:
+        "200":
+          description: Streak data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Streak"
+
+  /streaks/relapse:
+    post:
+      operationId: logRelapse
+      tags: [streaks]
+      summary: Log a relapse and start recovery protocol
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RelapseInput"
+      responses:
+        "200":
+          description: Relapse logged, recovery started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Streak"
+
+  # ─── BODY DOUBLING ROOMS ──────────────────────────────────────────────────
+  /rooms:
+    get:
+      operationId: getRooms
+      tags: [body-doubling]
+      summary: Get available body doubling rooms
+      responses:
+        "200":
+          description: Rooms list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+    post:
+      operationId: createRoom
+      tags: [body-doubling]
+      summary: Create a new focus room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomInput"
+      responses:
+        "201":
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+
+  /rooms/{id}/join:
+    post:
+      operationId: joinRoom
+      tags: [body-doubling]
+      summary: Join a body doubling room
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRoomInput"
+      responses:
+        "200":
+          description: Joined room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomSession"
+
+  /rooms/{id}/leave:
+    post:
+      operationId: leaveRoom
+      tags: [body-doubling]
+      summary: Leave a body doubling room
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Left room
+
+  /rooms/stats:
+    get:
+      operationId: getRoomStats
+      tags: [body-doubling]
+      summary: Get user's body doubling stats
+      responses:
+        "200":
+          description: Room statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomStats"
+
+  # ─── INSIGHTS ─────────────────────────────────────────────────────────────
+  /insights/daily:
+    get:
+      operationId: getDailyInsight
+      tags: [insights]
+      summary: Get today's science insight
+      responses:
+        "200":
+          description: Daily insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyInsight"
+
+  # ─── DASHBOARD (wow endpoints) ────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [life-score]
+      summary: Get full home dashboard summary in one call
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  # ─── WEEKLY REPORT ────────────────────────────────────────────────────────
+  /weekly-report:
+    get:
+      operationId: getWeeklyReport
+      tags: [weekly-report]
+      summary: Get the latest weekly Life Report
+      responses:
+        "200":
+          description: Weekly report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReport"
+
+# ─── SCHEMAS ──────────────────────────────────────────────────────────────
 components:
   schemas:
     HealthStatus:
@@ -31,6 +574,630 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # ── Users ──────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, name, onboardingComplete, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        biggestStruggle:
+          type: ["string", "null"]
+        struggleDuration:
+          type: ["string", "null"]
+        triedBefore:
+          type: ["string", "null"]
+        changeStatement:
+          type: ["string", "null"]
+        activeModules:
+          type: array
+          items:
+            type: string
+        addictionType:
+          type: ["string", "null"]
+        onboardingComplete:
+          type: boolean
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        activeModules:
+          type: array
+          items:
+            type: string
+        addictionType:
+          type: string
+
+    OnboardingInput:
+      type: object
+      required: [name, biggestStruggle, struggleDuration, triedBefore, changeStatement]
+      properties:
+        name:
+          type: string
+        biggestStruggle:
+          type: string
+          enum: [procrastination, compulsive_habits, cant_focus, all_of_the_above]
+        struggleDuration:
+          type: string
+          enum: [weeks, months, years]
+        triedBefore:
+          type: string
+          enum: [yes_nothing_worked, yes_briefly, no_first_time]
+        changeStatement:
+          type: string
+          maxLength: 120
+        addictionType:
+          type: string
+          enum: [pornography, social_media, gambling, substances, compulsive_eating]
+
+    OnboardingResult:
+      type: object
+      required: [user, initialLifeScore]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        initialLifeScore:
+          type: integer
+          minimum: 20
+          maximum: 55
+
+    # ── Life Score ──────────────────────────────────────────────────────────
+    LifeScore:
+      type: object
+      required: [score, delta, breakdown, updatedAt]
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        delta:
+          type: integer
+          description: Change since yesterday (positive or negative)
+        breakdown:
+          $ref: "#/components/schemas/LifeScoreBreakdown"
+        updatedAt:
+          type: string
+
+    LifeScoreBreakdown:
+      type: object
+      required: [habitCompletion, streakBonus, focusSessions, urgeResistance, moodConsistency]
+      properties:
+        habitCompletion:
+          type: integer
+        streakBonus:
+          type: integer
+        focusSessions:
+          type: integer
+        urgeResistance:
+          type: integer
+        moodConsistency:
+          type: integer
+
+    LifeScoreHistoryPoint:
+      type: object
+      required: [date, score]
+      properties:
+        date:
+          type: string
+        score:
+          type: integer
+
+    Simulation:
+      type: object
+      required: [currentPath, goalPath, gap]
+      properties:
+        currentPath:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimPoint"
+        goalPath:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimPoint"
+        gap:
+          type: integer
+          description: Current gap between paths (0 = converged)
+
+    SimPoint:
+      type: object
+      required: [day, value]
+      properties:
+        day:
+          type: integer
+        value:
+          type: number
+
+    # ── Tasks ───────────────────────────────────────────────────────────────
+    Task:
+      type: object
+      required: [id, title, status, estimatedMinutes, isTwoMinute, date, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        microSteps:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, completed, missed, snoozed]
+        estimatedMinutes:
+          type: ["integer", "null"]
+        isTwoMinute:
+          type: boolean
+        implementationIntention:
+          type: ["string", "null"]
+        temptationBundle:
+          type: ["string", "null"]
+        date:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        estimatedMinutes:
+          type: integer
+        implementationIntention:
+          type: string
+        temptationBundle:
+          type: string
+        scheduledDate:
+          type: string
+
+    TaskUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [completed, missed, snoozed, pending]
+        title:
+          type: string
+        implementationIntention:
+          type: string
+        temptationBundle:
+          type: string
+
+    ProcrastinationRisk:
+      type: object
+      required: [level, score, reason]
+      properties:
+        level:
+          type: string
+          enum: [low, medium, high]
+        score:
+          type: number
+          minimum: 0
+          maximum: 100
+        reason:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    TaskStats:
+      type: object
+      required: [weeklyCompletionRate, peakProcrastinationHour, totalCompleted, totalMissed, currentStreak]
+      properties:
+        weeklyCompletionRate:
+          type: number
+        peakProcrastinationHour:
+          type: ["integer", "null"]
+        totalCompleted:
+          type: integer
+        totalMissed:
+          type: integer
+        currentStreak:
+          type: integer
+        dailyBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyTaskSummary"
+
+    DailyTaskSummary:
+      type: object
+      required: [date, completed, missed]
+      properties:
+        date:
+          type: string
+        completed:
+          type: integer
+        missed:
+          type: integer
+
+    # ── Mood ────────────────────────────────────────────────────────────────
+    MoodLog:
+      type: object
+      required: [id, energy, focus, mood, date, createdAt]
+      properties:
+        id:
+          type: integer
+        energy:
+          type: integer
+          minimum: 1
+          maximum: 5
+        focus:
+          type: integer
+          minimum: 1
+          maximum: 5
+        mood:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: ["string", "null"]
+        date:
+          type: string
+        createdAt:
+          type: string
+
+    MoodInput:
+      type: object
+      required: [energy, focus, mood]
+      properties:
+        energy:
+          type: integer
+          minimum: 1
+          maximum: 5
+        focus:
+          type: integer
+          minimum: 1
+          maximum: 5
+        mood:
+          type: integer
+          minimum: 1
+          maximum: 5
+        notes:
+          type: string
+
+    # ── Focus Sessions ───────────────────────────────────────────────────────
+    FocusSession:
+      type: object
+      required: [id, intention, durationMinutes, status, createdAt]
+      properties:
+        id:
+          type: integer
+        intention:
+          type: string
+        durationMinutes:
+          type: integer
+        musicType:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, completed, abandoned]
+        focusQuality:
+          type: ["integer", "null"]
+          minimum: 1
+          maximum: 5
+        taskCompleted:
+          type: ["boolean", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    SessionInput:
+      type: object
+      required: [intention, durationMinutes]
+      properties:
+        intention:
+          type: string
+        durationMinutes:
+          type: integer
+          enum: [25, 50, 90]
+        musicType:
+          type: string
+          enum: [lofi, binaural_40hz, brown_noise, white_noise, silence]
+        roomId:
+          type: ["integer", "null"]
+
+    SessionComplete:
+      type: object
+      required: [taskCompleted, focusQuality]
+      properties:
+        taskCompleted:
+          type: boolean
+        focusQuality:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    SessionStats:
+      type: object
+      required: [totalSessionsThisWeek, totalHoursThisWeek, bestStreak, mostProductiveHour]
+      properties:
+        totalSessionsThisWeek:
+          type: integer
+        totalHoursThisWeek:
+          type: number
+        bestStreak:
+          type: integer
+        mostProductiveHour:
+          type: ["integer", "null"]
+        averageFocusQuality:
+          type: ["number", "null"]
+
+    # ── Urge Logs ───────────────────────────────────────────────────────────
+    UrgeLog:
+      type: object
+      required: [id, haltState, intensity, outcome, createdAt]
+      properties:
+        id:
+          type: integer
+        haltState:
+          type: array
+          items:
+            type: string
+            enum: [hungry, angry, lonely, tired]
+        intensity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        outcome:
+          type: string
+          enum: [resisted, surfed, redirected, relapsed]
+        redirectActivity:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    UrgeInput:
+      type: object
+      required: [haltState, intensity]
+      properties:
+        haltState:
+          type: array
+          items:
+            type: string
+            enum: [hungry, angry, lonely, tired]
+        intensity:
+          type: integer
+          minimum: 1
+          maximum: 10
+        outcome:
+          type: string
+          enum: [resisted, surfed, redirected, relapsed]
+        redirectActivity:
+          type: string
+        notes:
+          type: string
+
+    TriggerMap:
+      type: object
+      required: [haltBreakdown, hourlyPattern, totalUrges]
+      properties:
+        haltBreakdown:
+          type: object
+          properties:
+            hungry: { type: integer }
+            angry: { type: integer }
+            lonely: { type: integer }
+            tired: { type: integer }
+          required: [hungry, angry, lonely, tired]
+        hourlyPattern:
+          type: array
+          items:
+            $ref: "#/components/schemas/HourlyUrgeCount"
+        totalUrges:
+          type: integer
+        resistanceRate:
+          type: number
+
+    HourlyUrgeCount:
+      type: object
+      required: [hour, count]
+      properties:
+        hour:
+          type: integer
+        count:
+          type: integer
+
+    # ── Streaks ─────────────────────────────────────────────────────────────
+    Streak:
+      type: object
+      required: [currentDays, longestDays, addictionType, startedAt, milestones]
+      properties:
+        currentDays:
+          type: integer
+        longestDays:
+          type: integer
+        addictionType:
+          type: string
+        startedAt:
+          type: string
+        nextMilestone:
+          $ref: "#/components/schemas/Milestone"
+        milestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Milestone"
+        dopamineRecoveryPercent:
+          type: number
+          minimum: 0
+          maximum: 100
+        neuroBrainFact:
+          type: ["string", "null"]
+
+    Milestone:
+      type: object
+      required: [day, label, scienceFact, achieved]
+      properties:
+        day:
+          type: integer
+        label:
+          type: string
+        scienceFact:
+          type: string
+        achieved:
+          type: boolean
+        achievedAt:
+          type: ["string", "null"]
+
+    RelapseInput:
+      type: object
+      required: [triggeredBy]
+      properties:
+        triggeredBy:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    # ── Rooms ───────────────────────────────────────────────────────────────
+    Room:
+      type: object
+      required: [id, name, presenceCount, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        presenceCount:
+          type: integer
+        isPrivate:
+          type: boolean
+        isActive:
+          type: boolean
+        currentSessionMinutes:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    RoomInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        isPrivate:
+          type: boolean
+
+    JoinRoomInput:
+      type: object
+      required: [intention, durationMinutes]
+      properties:
+        intention:
+          type: string
+        durationMinutes:
+          type: integer
+
+    RoomSession:
+      type: object
+      required: [roomId, sessionId, joinedAt]
+      properties:
+        roomId:
+          type: integer
+        sessionId:
+          type: integer
+        joinedAt:
+          type: string
+
+    RoomStats:
+      type: object
+      required: [totalSessions, totalHours, currentStreak, mostProductiveHour]
+      properties:
+        totalSessions:
+          type: integer
+        totalHours:
+          type: number
+        currentStreak:
+          type: integer
+        mostProductiveHour:
+          type: ["integer", "null"]
+
+    # ── Insights ────────────────────────────────────────────────────────────
+    DailyInsight:
+      type: object
+      required: [id, text, source, module]
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        source:
+          type: string
+        module:
+          type: string
+          enum: [procrastination, addiction, body_doubling, general]
+
+    # ── Dashboard (wow) ──────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [user, lifeScore, todayTasks, activeStreak, activeRooms, dailyInsight, todayMood]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        lifeScore:
+          $ref: "#/components/schemas/LifeScore"
+        todayTasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        procrastinationRisk:
+          $ref: "#/components/schemas/ProcrastinationRisk"
+        activeStreak:
+          $ref: "#/components/schemas/Streak"
+        activeRooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Room"
+        dailyInsight:
+          $ref: "#/components/schemas/DailyInsight"
+        todayMood:
+          $ref: "#/components/schemas/MoodLog"
+
+    # ── Weekly Report ───────────────────────────────────────────────────────
+    WeeklyReport:
+      type: object
+      required: [weekStart, weekEnd, lifeScoreChange, biggestWin, scienceInsight, weekChallenge, streakStatus, moduleStats]
+      properties:
+        weekStart:
+          type: string
+        weekEnd:
+          type: string
+        lifeScoreChange:
+          type: integer
+        lifeScoreHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/LifeScoreHistoryPoint"
+        biggestWin:
+          type: string
+        scienceInsight:
+          type: string
+        weekChallenge:
+          type: string
+        streakStatus:
+          type: object
+          properties:
+            currentDays: { type: integer }
+            change: { type: integer }
+          required: [currentDays, change]
+        moduleStats:
+          type: object
+          properties:
+            tasksCompleted: { type: integer }
+            focusHours: { type: number }
+            urgesResisted: { type: integer }
+          required: [tasksCompleted, focusHours, urgesResisted]
