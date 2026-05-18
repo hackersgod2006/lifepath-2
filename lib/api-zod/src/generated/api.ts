@@ -36,10 +36,16 @@ export const GetMeResponse = zod.object({
 /**
  * @summary Update current user profile
  */
+export const updateMeBodyChangeStatementMax = 120;
+
+
+
 export const UpdateMeBody = zod.object({
   "name": zod.string().optional(),
   "activeModules": zod.array(zod.string()).optional(),
-  "addictionType": zod.string().optional()
+  "addictionType": zod.string().optional(),
+  "biggestStruggle": zod.enum(['procrastination', 'compulsive_habits', 'cant_focus', 'all_of_the_above']).optional(),
+  "changeStatement": zod.string().max(updateMeBodyChangeStatementMax).optional()
 })
 
 export const UpdateMeResponse = zod.object({

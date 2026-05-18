@@ -61,6 +61,7 @@ export * from './urgeLogHaltStateItem';
 export * from './urgeLogOutcome';
 export * from './user';
 export * from './userUpdate';
+export * from './userUpdateBiggestStruggle';
 export * from './weeklyReport';
 export * from './weeklyReportModuleStats';
 export * from './weeklyReportStreakStatus';

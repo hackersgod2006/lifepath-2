@@ -5,7 +5,7 @@ import {
   urgeLogsTable, streaksTable
 } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
-import { computeLifeScore, getCurrentUserId } from "./life-score.js";
+import { computeLifeScore } from "./life-score.js";
 import { toStreakResponse, MILESTONES } from "./urges.js";
 
 const SCIENCE_INSIGHTS = [
@@ -26,7 +26,7 @@ const router = Router();
 // GET /api/dashboard/summary
 router.get("/summary", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
+    const userId = req.userId!;
     if (!userId) {
       // Return empty state for new users
       return res.json({

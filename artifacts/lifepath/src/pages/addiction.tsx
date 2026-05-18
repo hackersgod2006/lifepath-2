@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, AlertTriangle, Activity, Brain, Wind, ChevronDown, ChevronUp,
-  BookOpen, Heart, Flame, Waves, Info, CheckCircle
+  BookOpen, Heart, Flame, Waves, Info, CheckCircle, Zap, Phone, Thermometer, Clock, X
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -632,6 +632,222 @@ export default function Addiction() {
           })}
         </div>
       </div>
+
+      {/* Emergency Toolkit — floating button */}
+      <EmergencyToolkit />
     </div>
+  );
+}
+
+function EmergencyToolkit() {
+  const [open, setOpen] = useState(false);
+  const [tool, setTool] = useState<string | null>(null);
+  const [breathPhase, setBreathPhase] = useState<"idle"|"active"|"done">("idle");
+  const [breathCount, setBreathCount] = useState(0);
+  const [delayActive, setDelayActive] = useState(false);
+  const [delaySeconds, setDelaySeconds] = useState(900);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const TOOLS = [
+    { id: "box-breathing", icon: Wind, label: "Box Breathing", color: "#2B6BFF", desc: "4-4-4-4 rhythm activates the vagal brake (Porges, 2011)" },
+    { id: "delay", icon: Clock, label: "15-Minute Delay", color: "#00C8FF", desc: "Urges peak in minutes. Delay = ride the wave (Hayes, 2004)" },
+    { id: "halt", icon: Brain, label: "HALT Assessment", color: "#F8A72A", desc: "Identify the real need beneath the urge" },
+    { id: "cold", icon: Thermometer, label: "Cold Protocol", color: "#A78BFA", desc: "Cold exposure triggers norepinephrine + endorphin release" },
+    { id: "contact", icon: Phone, label: "Accountability", color: "#00E5A0", desc: "Loneliness is trigger #1 — break isolation immediately" },
+  ];
+
+  useEffect(() => {
+    if (!delayActive) return;
+    timerRef.current = setInterval(() => {
+      setDelaySeconds(s => {
+        if (s <= 1) {
+          clearInterval(timerRef.current!);
+          setDelayActive(false);
+          return 900;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current!); };
+  }, [delayActive]);
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+  return (
+    <>
+      {/* Floating button */}
+      <motion.button
+        onClick={() => setOpen(true)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-24 right-5 md:bottom-8 z-40 flex items-center gap-2 px-4 py-3 rounded-2xl font-semibold text-sm shadow-lg"
+        style={{ background: "linear-gradient(135deg, #FF4D6D, #F8A72A)", color: "white" }}
+      >
+        <Zap className="w-4 h-4" />
+        Emergency Toolkit
+      </motion.button>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => { setOpen(false); setTool(null); }}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="w-full max-w-md rounded-2xl overflow-hidden"
+              style={{ background: "#0D1220", border: "1px solid rgba(255,77,109,0.3)" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-red-400" />
+                    <h2 className="font-display font-bold text-white">Emergency Toolkit</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">Science-backed tools for right now</p>
+                </div>
+                <button onClick={() => { setOpen(false); setTool(null); }} className="text-muted-foreground hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+                {!tool ? (
+                  TOOLS.map(t => {
+                    const Icon = t.icon;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setTool(t.id)}
+                        className="w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all hover:scale-[1.01]"
+                        style={{ background: `${t.color}10`, border: `1px solid ${t.color}30` }}
+                      >
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${t.color}20` }}>
+                          <Icon className="w-5 h-5" style={{ color: t.color }} />
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold text-sm">{t.label}</p>
+                          <p className="text-xs text-muted-foreground">{t.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })
+                ) : tool === "box-breathing" ? (
+                  <div className="text-center space-y-6 py-4">
+                    <h3 className="font-bold text-white">Box Breathing (4-4-4-4)</h3>
+                    <p className="text-xs text-muted-foreground">Military-grade stress reset. Activates parasympathetic nervous system via vagal nerve stimulation (Porges, 2011).</p>
+                    <div className="flex justify-center">
+                      <motion.div
+                        className="w-24 h-24 rounded-2xl flex items-center justify-center text-2xl font-bold border-4"
+                        animate={breathPhase === "active" ? { scale: [1, 1.3, 1.3, 1], borderRadius: ["16px", "50%", "50%", "16px"] } : {}}
+                        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+                        style={{ borderColor: "#2B6BFF", color: "#2B6BFF" }}
+                      >
+                        {breathPhase === "idle" ? <Wind className="w-8 h-8" /> : breathCount}
+                      </motion.div>
+                    </div>
+                    {breathPhase === "idle" && (
+                      <Button onClick={() => { setBreathPhase("active"); setBreathCount(4); }} style={{ background: "#2B6BFF" }}>
+                        Start Box Breathing
+                      </Button>
+                    )}
+                    {breathPhase === "active" && <p className="text-muted-foreground text-sm">Breathe in 4 → Hold 4 → Breathe out 4 → Hold 4</p>}
+                    <button onClick={() => setTool(null)} className="text-xs text-muted-foreground underline">← Back</button>
+                  </div>
+                ) : tool === "delay" ? (
+                  <div className="text-center space-y-6 py-4">
+                    <h3 className="font-bold text-white">15-Minute Delay</h3>
+                    <p className="text-xs text-muted-foreground">Urges follow a wave pattern — they always peak and pass. Delay just 15 minutes. The urge will subside (Hayes, ACT, 2004).</p>
+                    <div className="text-5xl font-display font-bold" style={{ color: "#00C8FF" }}>
+                      {formatTime(delaySeconds)}
+                    </div>
+                    {!delayActive ? (
+                      <Button onClick={() => { setDelayActive(true); setDelaySeconds(900); }} style={{ background: "#00C8FF", color: "#0A0E1A" }}>
+                        Start 15-Minute Timer
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Stay with it. This feeling is temporary.</p>
+                    )}
+                    <button onClick={() => setTool(null)} className="text-xs text-muted-foreground underline">← Back</button>
+                  </div>
+                ) : tool === "halt" ? (
+                  <div className="space-y-4 py-2">
+                    <h3 className="font-bold text-white">HALT Check</h3>
+                    <p className="text-xs text-muted-foreground">Most relapses are not about the substance — they're about an unmet biological need. Check each:</p>
+                    {["Hungry", "Angry", "Lonely", "Tired"].map((state, i) => {
+                      const colors = ["#F8A72A", "#FF4D6D", "#A78BFA", "#00C8FF"];
+                      const tips = [
+                        "Eat 20g of protein + drink water before doing anything else.",
+                        "4-7-8 breathing: Inhale 4s, hold 7s, exhale 8s. Calms amygdala.",
+                        "Text one real person right now. Not social media. One message.",
+                        "Lie down for 20 minutes. Set an alarm. Rest > willpower when exhausted."
+                      ];
+                      return (
+                        <div key={state} className="p-4 rounded-xl" style={{ background: `${colors[i]}10`, border: `1px solid ${colors[i]}25` }}>
+                          <p className="font-semibold text-sm" style={{ color: colors[i] }}>Am I {state}?</p>
+                          <p className="text-xs text-muted-foreground mt-1">{tips[i]}</p>
+                        </div>
+                      );
+                    })}
+                    <button onClick={() => setTool(null)} className="text-xs text-muted-foreground underline">← Back</button>
+                  </div>
+                ) : tool === "cold" ? (
+                  <div className="space-y-4 py-2">
+                    <h3 className="font-bold text-white">Cold Exposure Protocol</h3>
+                    <p className="text-sm text-muted-foreground">Cold exposure raises norepinephrine by 200-300% and triggers endorphin release — creating a natural dopamine alternative (Huberman, 2021).</p>
+                    <div className="space-y-3">
+                      {[
+                        { step: "1", text: "Turn shower to cold (or as cold as possible)", time: "0s" },
+                        { step: "2", text: "Step in fully. Do not hesitate — the decision is made.", time: "0s" },
+                        { step: "3", text: "Control your breathing. Exhale slowly. Stay for 30 seconds.", time: "30s" },
+                        { step: "4", text: "Gradually increase to 2-3 minutes over sessions.", time: "2-3 min" },
+                      ].map(s => (
+                        <div key={s.step} className="flex gap-3 items-start">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: "rgba(167,139,250,0.2)", color: "#A78BFA" }}>{s.step}</div>
+                          <div>
+                            <p className="text-sm text-white">{s.text}</p>
+                            {s.time !== "0s" && <p className="text-xs text-muted-foreground">{s.time}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => setTool(null)} className="text-xs text-muted-foreground underline">← Back</button>
+                  </div>
+                ) : tool === "contact" ? (
+                  <div className="space-y-4 py-2">
+                    <h3 className="font-bold text-white">Break the Isolation</h3>
+                    <p className="text-sm text-muted-foreground">Loneliness activates the same pain circuits as physical injury (Eisenberger, 2003). Human connection interrupts the urge loop.</p>
+                    <div className="p-4 rounded-xl space-y-2" style={{ background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)" }}>
+                      <p className="font-semibold text-sm text-white">Do one of these right now:</p>
+                      {[
+                        "Text a friend: 'Hey, thinking of you'",
+                        "Call someone — voice, not text",
+                        "Go to a public place (café, library)",
+                        "Join the LifePath body doubling room",
+                        "Write in your journal (you are not alone in this)",
+                      ].map((a, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#00E5A0" }} />
+                          {a}
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => setTool(null)} className="text-xs text-muted-foreground underline">← Back</button>
+                  </div>
+                ) : null}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

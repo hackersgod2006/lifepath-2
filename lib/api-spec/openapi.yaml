@@ -615,6 +615,12 @@ components:
             type: string
         addictionType:
           type: string
+        biggestStruggle:
+          type: string
+          enum: [procrastination, compulsive_habits, cant_focus, all_of_the_above]
+        changeStatement:
+          type: string
+          maxLength: 120
 
     OnboardingInput:
       type: object

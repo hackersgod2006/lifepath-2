@@ -5,9 +5,13 @@
  * LifePath 2.0 API — The App That Fixes What Life Breaks
  * OpenAPI spec version: 0.1.0
  */
+import type { UserUpdateBiggestStruggle } from './userUpdateBiggestStruggle';
 
 export interface UserUpdate {
   name?: string;
   activeModules?: string[];
   addictionType?: string;
+  biggestStruggle?: UserUpdateBiggestStruggle;
+  /** @maxLength 120 */
+  changeStatement?: string;
 }

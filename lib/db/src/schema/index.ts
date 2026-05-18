@@ -7,3 +7,4 @@ export * from "./urge-logs";
 export * from "./streaks";
 export * from "./rooms";
 export * from "./insights";
+export * from "./journal-entries";

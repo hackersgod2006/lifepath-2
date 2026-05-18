@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { moodLogsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { LogMoodBody } from "@workspace/api-zod";
-import { getCurrentUserId } from "./life-score.js";
 
 const router = Router();
 
@@ -22,8 +21,7 @@ function toMoodResponse(m: typeof moodLogsTable.$inferSelect) {
 // POST /api/mood
 router.post("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const parsed = LogMoodBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid mood data" });
@@ -60,8 +58,7 @@ router.post("/", async (req, res) => {
 // GET /api/mood/today
 router.get("/today", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const today = new Date().toISOString().split("T")[0];
     const logs = await db.select().from(moodLogsTable)

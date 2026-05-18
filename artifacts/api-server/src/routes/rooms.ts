@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { roomsTable, focusSessionsTable } from "@workspace/db";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { CreateRoomBody, JoinRoomBody } from "@workspace/api-zod";
-import { getCurrentUserId } from "./life-score.js";
 
 const router = Router();
 
@@ -36,8 +35,7 @@ router.get("/", async (req, res) => {
 // POST /api/rooms
 router.post("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const parsed = CreateRoomBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid room data" });
@@ -62,8 +60,7 @@ router.post("/", async (req, res) => {
 // POST /api/rooms/:id/join
 router.post("/:id/join", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const roomId = parseInt(req.params.id);
     const parsed = JoinRoomBody.safeParse(req.body);
@@ -122,8 +119,7 @@ router.post("/:id/leave", async (req, res) => {
 // GET /api/rooms/stats
 router.get("/stats", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);

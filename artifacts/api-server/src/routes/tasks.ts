@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { tasksTable } from "@workspace/db";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { CreateTaskBody, UpdateTaskBody } from "@workspace/api-zod";
-import { getCurrentUserId } from "./life-score.js";
 
 const router = Router();
 
@@ -44,8 +43,7 @@ function generateMicroSteps(title: string): string[] {
 // GET /api/tasks
 router.get("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const dateParam = req.query.date as string | undefined;
     const targetDate = dateParam ?? new Date().toISOString().split("T")[0];
@@ -72,8 +70,7 @@ router.get("/", async (req, res) => {
 // POST /api/tasks
 router.post("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const parsed = CreateTaskBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid task data" });
@@ -145,8 +142,7 @@ router.delete("/:id", async (req, res) => {
 // GET /api/tasks/risk-score
 router.get("/risk-score", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const today = new Date().toISOString().split("T")[0];
     const todayTasks = await db.select().from(tasksTable)
@@ -192,8 +188,7 @@ router.get("/risk-score", async (req, res) => {
 // GET /api/tasks/stats
 router.get("/stats", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

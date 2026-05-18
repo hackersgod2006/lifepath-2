@@ -2,15 +2,14 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { lifeScoresTable, tasksTable, focusSessionsTable, urgeLogsTable, streaksTable } from "@workspace/db";
 import { eq, and, gte } from "drizzle-orm";
-import { computeLifeScore, getCurrentUserId } from "./life-score.js";
+import { computeLifeScore } from "./life-score.js";
 
 const router = Router();
 
 // GET /api/weekly-report
 router.get("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);

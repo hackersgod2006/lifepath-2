@@ -1,8 +1,10 @@
-import { useGetDashboardSummary, useGetSimulation, useGetLifeScore, useGetDailyInsight } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useGetSimulation, useGetLifeScore, useGetDailyInsight, useGetTodayMood, useLogMood, getGetTodayMoodQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckSquare, Activity, Users, Flame, ChevronRight, Brain, Sparkles, TrendingUp, Zap, BookOpen, ArrowRight } from "lucide-react";
+import { CheckSquare, Activity, Users, Flame, Sparkles, TrendingUp, Zap, BookOpen, ArrowRight, Battery, BrainCircuit, Smile, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 const SCIENCE_FACTS = [
@@ -54,11 +56,97 @@ function AnimatedCounter({ value, duration = 1500 }: { value: number; duration?:
   return <>{display}</>;
 }
 
+function MoodCheckin({ onDismiss }: { onDismiss: () => void }) {
+  const logMood = useLogMood();
+  const queryClient = useQueryClient();
+  const [energy, setEnergy] = useState(3);
+  const [focus, setFocus] = useState(3);
+  const [mood, setMood] = useState(3);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    logMood.mutate(
+      { data: { energy, focus, mood, notes: "" } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetTodayMoodQueryKey() });
+          onDismiss();
+        },
+        onSettled: () => setSaving(false),
+      }
+    );
+  };
+
+  const sliders = [
+    { label: "Energy", icon: Battery, value: energy, set: setEnergy, color: "#00E5A0" },
+    { label: "Focus", icon: BrainCircuit, value: focus, set: setFocus, color: "#2B6BFF" },
+    { label: "Mood", icon: Smile, value: mood, set: setMood, color: "#F8A72A" },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      className="rounded-2xl p-5 mb-6 relative"
+      style={{ background: "linear-gradient(135deg, rgba(43,107,255,0.1), rgba(0,200,255,0.06))", border: "1px solid rgba(43,107,255,0.25)" }}
+    >
+      <button onClick={onDismiss} className="absolute top-4 right-4 text-muted-foreground hover:text-white transition-colors">
+        <X className="w-4 h-4" />
+      </button>
+      <p className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">Morning Check-in</p>
+      <p className="text-sm text-muted-foreground mb-4">
+        Damasio (1994): Emotional state predicts decision quality. 30-second check-in.
+      </p>
+      <div className="space-y-3 mb-4">
+        {sliders.map(s => {
+          const Icon = s.icon;
+          return (
+            <div key={s.label} className="flex items-center gap-3">
+              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: s.color }} />
+              <span className="text-xs text-muted-foreground w-12">{s.label}</span>
+              <div className="flex gap-1 flex-1">
+                {[1, 2, 3, 4, 5].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => s.set(v)}
+                    className="flex-1 h-7 rounded-md transition-all"
+                    style={{
+                      background: v <= s.value ? s.color : "rgba(255,255,255,0.08)",
+                      border: v === s.value ? `1px solid ${s.color}` : "1px solid transparent",
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-bold w-4" style={{ color: s.color }}>{s.value}</span>
+            </div>
+          );
+        })}
+      </div>
+      <Button onClick={handleSave} disabled={saving} size="sm" style={{ background: "#2B6BFF" }}>
+        {saving ? "Saving..." : "Log Morning State"}
+      </Button>
+    </motion.div>
+  );
+}
+
 export default function Dashboard() {
   const { data, isLoading } = useGetDashboardSummary();
   const { data: simulation } = useGetSimulation();
   const { data: lifeScoreData } = useGetLifeScore();
+  const { data: todayMood } = useGetTodayMood();
+  const queryClient = useQueryClient();
+  const [showMoodCheckin, setShowMoodCheckin] = useState(false);
   const [factIndex] = useState(() => new Date().getDay() % SCIENCE_FACTS.length);
+
+  useEffect(() => {
+    if (todayMood === null || todayMood === undefined) {
+      setShowMoodCheckin(true);
+    } else {
+      setShowMoodCheckin(false);
+    }
+  }, [todayMood]);
   const fact = SCIENCE_FACTS[factIndex];
 
   if (isLoading || !data) {
@@ -124,6 +212,13 @@ export default function Dashboard() {
 
   return (
     <div className="p-5 md:p-8 space-y-8 max-w-4xl mx-auto pb-28">
+      {/* Mood check-in */}
+      <AnimatePresence>
+        {showMoodCheckin && !isLoading && (
+          <MoodCheckin onDismiss={() => setShowMoodCheckin(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 pt-2">
         <h1 className="text-3xl font-display font-bold tracking-tight">

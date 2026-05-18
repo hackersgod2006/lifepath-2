@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { urgeLogsTable, streaksTable } from "@workspace/db";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { LogUrgeBody, LogRelapseBody } from "@workspace/api-zod";
-import { getCurrentUserId } from "./life-score.js";
 
 const router = Router();
 
@@ -52,8 +51,7 @@ function toStreakResponse(s: typeof streaksTable.$inferSelect, currentDays: numb
 // GET /api/urges
 router.get("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
     const urges = await db.select().from(urgeLogsTable)
@@ -71,8 +69,7 @@ router.get("/", async (req, res) => {
 // POST /api/urges
 router.post("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const parsed = LogUrgeBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid urge data" });
@@ -98,8 +95,7 @@ router.post("/", async (req, res) => {
 // GET /api/urges/trigger-map
 router.get("/trigger-map", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -116,7 +112,7 @@ router.get("/trigger-map", async (req, res) => {
 
     const hourlyMap: Record<number, number> = {};
     urges.forEach(u => {
-      const h = u.createdAt.getHours();
+      const h: number = u.createdAt.getHours();
       hourlyMap[h] = (hourlyMap[h] ?? 0) + 1;
     });
     const hourlyPattern = Array.from({ length: 24 }, (_, i) => ({ hour: i, count: hourlyMap[i] ?? 0 }));
@@ -134,8 +130,7 @@ router.get("/trigger-map", async (req, res) => {
 // GET /api/streaks
 router.get("/streaks", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const streaks = await db.select().from(streaksTable).where(eq(streaksTable.userId, userId)).limit(1);
     if (!streaks.length) {
@@ -164,8 +159,7 @@ router.get("/streaks", async (req, res) => {
 // POST /api/streaks/relapse
 router.post("/streaks/relapse", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const streaks = await db.select().from(streaksTable).where(eq(streaksTable.userId, userId)).limit(1);
 

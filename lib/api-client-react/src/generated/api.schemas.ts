@@ -27,10 +27,23 @@ export interface User {
   createdAt: string;
 }
 
+export type UserUpdateBiggestStruggle = typeof UserUpdateBiggestStruggle[keyof typeof UserUpdateBiggestStruggle];
+
+
+export const UserUpdateBiggestStruggle = {
+  procrastination: 'procrastination',
+  compulsive_habits: 'compulsive_habits',
+  cant_focus: 'cant_focus',
+  all_of_the_above: 'all_of_the_above',
+} as const;
+
 export interface UserUpdate {
   name?: string;
   activeModules?: string[];
   addictionType?: string;
+  biggestStruggle?: UserUpdateBiggestStruggle;
+  /** @maxLength 120 */
+  changeStatement?: string;
 }
 
 export type OnboardingInputBiggestStruggle = typeof OnboardingInputBiggestStruggle[keyof typeof OnboardingInputBiggestStruggle];

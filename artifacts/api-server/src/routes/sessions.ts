@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { focusSessionsTable } from "@workspace/db";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { StartSessionBody, CompleteSessionBody } from "@workspace/api-zod";
-import { getCurrentUserId } from "./life-score.js";
 
 const router = Router();
 
@@ -24,8 +23,7 @@ function toSessionResponse(s: typeof focusSessionsTable.$inferSelect) {
 // GET /api/sessions
 router.get("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
     const sessions = await db.select().from(focusSessionsTable)
@@ -43,8 +41,7 @@ router.get("/", async (req, res) => {
 // POST /api/sessions
 router.post("/", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const parsed = StartSessionBody.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Invalid session data" });
@@ -92,8 +89,7 @@ router.post("/:id/complete", async (req, res) => {
 // GET /api/sessions/stats
 router.get("/stats", async (req, res) => {
   try {
-    const userId = await getCurrentUserId();
-    if (!userId) return res.status(404).json({ error: "No user" });
+    const userId = req.userId!;
 
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
